@@ -1,17 +1,67 @@
 // score counter
 var score = 0;
 var topic = 'people/';
-var qArray = [];
 var answerArray = [];
-let url = 'https://swapi.dev/api/' + topic;
+const url = 'https://swapi.dev/api/' + topic;
 var checksArray = [];
 let pages = 0;
 var correctChoice;
+var questionCount = 0;
+
+window.onload = startEventListeners;
+
+function startEventListeners () {
+  document.getElementById("start").addEventListener("click", startQuiz);
+};
+
+function startQuiz () {
+  document.getElementById("startDiv").innerHTML = '';
+  document.getElementById("question").innerText = "loading questions...";
+  document.getElementById("ansbuttons").innerHTML = '<button  id="a1"> loading ... </button> <button  id="a2"> loading ... </button>';
+
+  getAPI(randomPages);
+}
+
+function checkChoice() {
+  questionCount += 1;
+  if (this.innerText == correctChoice) {
+    this.className = "correct";
+    score += 1;
+  } else {
+    this.className = "wrong";
+  }
+  document.getElementById("a1").removeEventListener("click", checkChoice);
+  document.getElementById("a2").removeEventListener("click", checkChoice);
+  if (questionCount < 5) {
+    document.getElementById("nextDiv").innerHTML = '<button id = "next">Next question -></button>';
+    document.getElementById("next").addEventListener("click", nextQuestion);
+  } else {
+    document.getElementById("nextDiv").innerHTML = '<p> Amazing! You guessed ' + score + '/5 answers correctly. <p>';
+  }
+};
+
+function nextQuestion () { 
+  answerArray = [];
+  document.getElementById("nextDiv").innerHTML = '';
+  document.getElementById("question").innerText = "loading";
+  document.getElementById("a1").className = "nuetral";
+  document.getElementById("a2").className = "nuetral";
+  document.getElementById("a1").innerText = "...";
+  document.getElementById("a2").innerText = "...";
+  document.getElementById("a1").addEventListener("click", checkChoice);
+  document.getElementById("a2").addEventListener("click", checkChoice);
+  randomPages(pages);
+}
 
 //returns a random number between minimum and maximum (both included)
 function randomNumber(min, max) {
   return Math.floor(Math.random() * (max - min +1)) + min;
 };
+
+
+function shuffleArray(arr) {
+  arr.sort(() => Math.random() - 0.5);
+}
 
 //object holding funtions to return info about a character 
 var pplAttributes = {
@@ -28,9 +78,8 @@ var pplAttributes = {
     if (name == "unknown") {
       return false;
     } else {
-      qArray.push('is from the planet ' + name);
+      return ('Which character is from the planet ' + name +"?");
     };
-      return name;
   },
   vehicle: async function(person) {
     try {
@@ -43,8 +92,7 @@ var pplAttributes = {
     };
     const data = await response.json();
     const name = await data.name;
-    qArray.push('operated a ' + name);;
-    return name;
+    return (' Which character operated a ' + name + "?");
   },
   starship: async function(person) {
     try {
@@ -57,32 +105,27 @@ var pplAttributes = {
     };
     const data = await response.json();
     const name = await data.name;
-    qArray.push('piloted a ' + name);
-    return name;
+    return ("Which character has piloted a " + name + "?");
   },
   gender: function(person) {
     if (person.gender !== 'n/a'){
-      qArray.push('is ' + person.gender)
-      return person.gender 
+      return ("Which character is a non-android " + person.gender + "?"); 
   } else {
     return false;
   };
   },
   birth: function(person) {
     if (person.birth_year !== 'none' && person.birth_year !== 'unknown'){
-      qArray.push('was born in ' + person.birth_year);
-      return person.birth_year;
+      return ('Which character was born in the year ' + person.birth_year + "?");
     } else {
       return false;
     };
   },
   height: function(person) {
-    qArray.push('is ' + person.height + 'cm tall ');
-    return person.height;
+    return ('Which character is ' + person.height + 'cm tall?');
   },
   filmsNum: function (person) {
-    qArray.push('was featured in ' + person.films.length + ' film' + ((person.films.length != 1) ? 's ' : ' '));
-    return person.films.length;
+    return ('Which character was featured in ' + ((person.films.length <2) ? 'only  ' : '') + person.films.length + ' film' + ((person.films.length != 1) ? 's? ' : '?'));
   },
 };
 
@@ -101,12 +144,16 @@ async function getAPI(callback) {
 
 //choose a random page
 async function randomPages(pagecount) {
-  do {
-	response = await fetch(url + randomNumber(1, pagecount));
-} while (!response.ok);
-  const correctAnswerData = await response.json();
+	do {
+		try {
+	      response = await fetch(url + randomNumber(1, pagecount));
+      } catch (error) {
+        console.log(error)
+    }
+	} while (!response.ok || response.status >200);
+	correctAnswerData = await response.json();
   answerArray.push(correctAnswerData.name);
-  
+  correctChoice = correctAnswerData.name;
   console.log(correctAnswerData);
   getValidAttribute(correctAnswerData, randomWrong);
 
@@ -123,7 +170,7 @@ async function getValidAttribute(answerJSON, nextFunc){
   } while ( correctAnswerAttribute === false);
   
   console.log(correctAnswerAttribute);
-
+  document.getElementById("question").innerHTML = correctAnswerAttribute;
   nextFunc(correctAnswerAttribute, attribute);
 
 }
@@ -134,87 +181,40 @@ async function randomWrong(correctAttribute, attributeKey) {
   do {
     key = attributeKey;
     attribFunc = pplAttributes[key];
-    wrongAnswer = await fetch (url + randomNumber(1, pages));
-    wrongAnswerData = await wrongAnswer.json();
+    do {
+      try {
+          response = await fetch(url + randomNumber(1, pages));
+        } catch (error) {
+          console.log(error)
+      }
+    } while (!response.ok || response.status >200);
+    wrongAnswerData = await response.json();
     wrongAttribute = await attribFunc(wrongAnswerData);
     console.log(wrongAttribute);
   } while ( wrongAttribute == correctAttribute);
   console.log(wrongAttribute);
   console.log(wrongAnswerData);
   answerArray.push(wrongAnswerData.name);
+  console.log (answerArray);
+  shuffleArray(answerArray);
+  document.getElementById("a1").innerText = answerArray[0];
+  document.getElementById("a2").innerText = answerArray[1];
+  document.getElementById("a1").addEventListener("click", checkChoice);
+  document.getElementById("a2").addEventListener("click", checkChoice);
 }
 
 
-getAPI(randomPages);
+
 
 function randomAttributeKey (obj) {
   const keys = Object.keys(obj);
   return keys[randomNumber(0,keys.length-1)];
 };
 
-// let attribute = randomAttributeKey(pplAttributes);
-
-
-// console.log(attribute);
-
-
-
-
-
-
-
-//let attributeData = correctAnswer.attribute;
-
-
-// function nonMatch(){
-//   let wrongAnswer= getRandom();
-//   // while (wrongAnswer.attribute === attributeData) {
-//   //   wrongAnswer = getAPI();
-//   // }
-//   return(wrongAnswer);
-// };
-
-// console.log(nonMatch());
-
 
 // move from question to question by stepping through i++ i=5
-// *choose random character and assign to a variable
-
-// display
-// "Which character q1 +and q2 +and q3" access array 1 2 3
-
-/////////for (let i = 0; i < 3; i++) {}
-
-// *randomize questions from list of choices 
-// skip the question if response is "unknown" -birth year "none" -hair color empty [] -vehicles and starships  "n/a"
-// add the question to a variable which stores an array 
-// add only the atttributes title to an array which can be used to compare to other false answers
 
 
-
-//     list
-
-//     operates a --vehicle:name (if (n/a) skip this)
-//     flies a ---starship:name (if n/a, skip )
-
-//     was featured in --- list films: name 
- 
-//////var peopleQuestions = ['is ' + correctAnswer.gender, 'operates a ' +]
-
-
-
-// *provide a list of answer choices
-//   variable for chosen character name add to array
-//   i++, i = 3 )
-//   randomly choose character and , (random between 1 and however many pages there are of characters) 
-//     check that their attributes do not match the chosen characters attributes
-//       if this character atribute === that character attribute and and
-//        next (i--)
-//       if not
-//         access and save their name to an array
-
-//   display 
-//   names from array in a randomized order 
 //    *on click 
 //       if character === chosen character 
 //        add a Point 
@@ -227,6 +227,17 @@ function randomAttributeKey (obj) {
 // next button
 //  keep the score counter but 
 
+
+
+// for (var i in answerButtons) {
+//   answerButtons[i].addEventListener("click", function () {
+//     if (this.innerHTML == correctChoice){
+//       this.innerHTML = "correct";
+//     } else {
+//       this.innerHTML = "wrong";
+//     };
+//   })
+// };
 
 
 

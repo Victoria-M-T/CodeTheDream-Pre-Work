@@ -1,0 +1,45 @@
+html {
+    background-color: rgb(27, 24, 24)
+}
+
+div {
+    background-color: white;
+    margin: 0 auto;
+    display: grid;
+    justify-content: center;
+}
+
+h1 {
+    text-align: center;
+    font-weight: bold;
+    color: white;
+    font-family: "Courier new";
+  }
+
+p {
+    text-align: center;
+    font-family: "Courier new";
+    font-size:larger;
+    font-weight: bold;
+}
+
+button {
+    margin:1em;
+    padding: .5em;
+    font-weight: bold;
+    font-family: "Courier new";
+    font-weight: bold;
+    border-width: 1.5px;
+}
+
+button.wrong {
+    background-color: rgb(195, 82, 82);
+    border-color: rgb(178, 59, 59);
+    color: white;
+}
+
+button.correct {
+    background-color:rgb(110, 180, 110);
+    border-color:rgb(59, 134, 59);
+    color: white;
+}
