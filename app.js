@@ -2,124 +2,83 @@
 var score = 0;
 var topic = 'people/';
 var qArray = [];
-
+var answerArray = [];
 let url = 'https://swapi.dev/api/' + topic;
-
-
+var checksArray = [];
+let pages = 0;
+var correctChoice;
 
 //returns a random number between minimum and maximum (both included)
 function randomNumber(min, max) {
   return Math.floor(Math.random() * (max - min +1)) + min;
 };
 
-//create a list of attributes that can be inserted into the trivia question
-// async function createQArray(person){
-//   qArray = [];
-//   await fetch(person.homeworld)
-//     .then((response) => response.json())
-//     .then((data) => qArray.push('is from the planet ' + data.name));
-//   await fetch(person.vehicles[0])
-//     .then((response) => response.json())
-//     .then((data) => qArray.push('operated a ' + data.name))
-//     .catch(error => console.log('has not operated a vehicle'));
-//   await fetch(person.starships[0])
-//     .then((response) => response.json())
-//     .then((data) => qArray.push('piloted a ' + data.name))
-//     .catch(error => console.log('has not piloted a starship'));
-//   if (person.gender !== 'n/a'){
-//     qArray.push('is ' + person.gender)
-//   };
-//   if (person.birth_year !== 'none' && person.birth_year !== 'unknown'){
-//     qArray.push('was born in ' + person.birth_year)
-//   };
-//   qArray.push('is ' + person.height + 'cm tall ');
-//   qArray.push('was featured in ' + person.films.length + ' film' + ((person.films.length != 1) ? 's ' : ' '));
-  
-//   console.log(qArray);
-// };
-
-
-// var pplAttributes = {
-//   homeworld: function (person) {
-//     fetch(person.homeworld)
-//     .then((response) => response.json())
-//     .then((data) => qArray.push('is from the planet ' + data.name))
-//     return data.name;
-//   },
-//   vehicle: function(person) {
-//     fetch(person.vehicles[0])
-//     .then((response) => response.json())
-//     .then((data) => qArray.push('operated a ' + data.name))
-//     .catch(error => console.log('has not operated a vehicle'))
-//     return data.name;
-//   },
-//   starship: function(person) {
-//     fetch(person.starships[0])
-//     .then((response) => response.json())
-//     .then((data) => qArray.push('piloted a ' + data.name))
-//     .catch(error => console.log('has not piloted a starship'))
-//     return data.name;
-//   },
-//   gender: function(person) {
-//     if (person.gender !== 'n/a'){
-//       qArray.push('is ' + person.gender)
-//       return person.gender 
-//   };
-//   },
-//   birth: function(person) {
-//     if (person.birth_year !== 'none' && person.birth_year !== 'unknown'){
-//       qArray.push('was born in ' + person.birth_year)
-//       return person.birth_year
-//     };
-//   },
-//   height: function(person) {
-//     qArray.push('is ' + person.height + 'cm tall ');
-//     return person.heght;
-//   },
-//   filmsNum: function (person) {
-//     qArray.push('was featured in ' + person.films.length + ' film' + ((person.films.length != 1) ? 's ' : ' '));
-//     return person.films.length;
-//   },
-// };
-
-
+//object holding funtions to return info about a character 
 var pplAttributes = {
   homeworld: async function (person) {
-    response = await fetch(person.homeworld);
+    try {response = await fetch(person.homeworld);
+    } catch (e) {
+      return false;
+    };
+    if (!response.ok) {
+      return false;
+    };
     const data = await response.json();
-    const name = await data.name
-    qArray.push('is from the planet ' + name)
+    const name = await data.name;
+    if (name == "unknown") {
+      return false;
+    } else {
+      qArray.push('is from the planet ' + name);
+    };
+      return name;
+  },
+  vehicle: async function(person) {
+    try {
+      response = await fetch(person.vehicles[0]);
+    } catch (e) {
+      return false;
+    };
+    if (!response.ok) {
+      return false;
+    };
+    const data = await response.json();
+    const name = await data.name;
+    qArray.push('operated a ' + name);;
     return name;
   },
-  vehicle: function(person) {
-    fetch(person.vehicles[0])
-    .then((response) => response.json())
-    .then((data) => qArray.push('operated a ' + data.name))
-    .catch(error => console.log('has not operated a vehicle'))
-    return data.name;
-  },
-  starship: function(person) {
-    fetch(person.starships[0])
-    .then((response) => response.json())
-    .then((data) => qArray.push('piloted a ' + data.name))
-    .catch(error => console.log('has not piloted a starship'))
-    return data.name;
+  starship: async function(person) {
+    try {
+      response = await fetch(person.starships[0]);
+    } catch (e) {
+      return false;
+    };
+    if (!response.ok) {
+      return false;
+    };
+    const data = await response.json();
+    const name = await data.name;
+    qArray.push('piloted a ' + name);
+    return name;
   },
   gender: function(person) {
     if (person.gender !== 'n/a'){
       qArray.push('is ' + person.gender)
       return person.gender 
+  } else {
+    return false;
   };
   },
   birth: function(person) {
     if (person.birth_year !== 'none' && person.birth_year !== 'unknown'){
-      qArray.push('was born in ' + person.birth_year)
-      return person.birth_year
+      qArray.push('was born in ' + person.birth_year);
+      return person.birth_year;
+    } else {
+      return false;
     };
   },
   height: function(person) {
     qArray.push('is ' + person.height + 'cm tall ');
-    return person.heght;
+    return person.height;
   },
   filmsNum: function (person) {
     qArray.push('was featured in ' + person.films.length + ' film' + ((person.films.length != 1) ? 's ' : ' '));
@@ -135,29 +94,56 @@ async function getAPI(callback) {
   const data = await response.json();
   const count = await data.count;
   console.log(count);
-  callback(count)
+  pages = count;
+  callback(count);
 };
-
 
 
 //choose a random page
 async function randomPages(pagecount) {
-  const correctAnswer = await fetch(url + randomNumber(1, pagecount));
-  const correctAnswerData = await correctAnswer.json();
-
-
-  const correctAnswerAttribute = attribFunc(correctAnswerData);
-  let wrongAnswer = await fetch (url + randomNumber(1, pagecount));
-  let wrongAnswerData = await wrongAnswer.json();
-  let wrongAnswerAttribute =  attribFunc(wrongAnswerData);
-  
+  do {
+	response = await fetch(url + randomNumber(1, pagecount));
+} while (!response.ok);
+  const correctAnswerData = await response.json();
+  answerArray.push(correctAnswerData.name);
   
   console.log(correctAnswerData);
-  console.log(wrongAnswerData);
-  console.log(correctAnswerAttribute);
-  console.log(wrongAnswerAttribute);
+  getValidAttribute(correctAnswerData, randomWrong);
 
 }
+
+
+//get the data off an attribute for the answer only if it exists and is valid
+async function getValidAttribute(answerJSON, nextFunc){
+  do {
+    attribute = randomAttributeKey(pplAttributes);
+    attribFunc = pplAttributes[attribute];
+    correctAnswerAttribute = await attribFunc(answerJSON);
+    console.log(correctAnswerAttribute);
+  } while ( correctAnswerAttribute === false);
+  
+  console.log(correctAnswerAttribute);
+
+  nextFunc(correctAnswerAttribute, attribute);
+
+}
+
+
+//chose a random wront answer that does share the chosen attribute with the correct answer
+async function randomWrong(correctAttribute, attributeKey) {
+  do {
+    key = attributeKey;
+    attribFunc = pplAttributes[key];
+    wrongAnswer = await fetch (url + randomNumber(1, pages));
+    wrongAnswerData = await wrongAnswer.json();
+    wrongAttribute = await attribFunc(wrongAnswerData);
+    console.log(wrongAttribute);
+  } while ( wrongAttribute == correctAttribute);
+  console.log(wrongAttribute);
+  console.log(wrongAnswerData);
+  answerArray.push(wrongAnswerData.name);
+}
+
 
 getAPI(randomPages);
 
@@ -166,16 +152,14 @@ function randomAttributeKey (obj) {
   return keys[randomNumber(0,keys.length-1)];
 };
 
-let attribute = randomAttributeKey(pplAttributes);
+// let attribute = randomAttributeKey(pplAttributes);
 
 
-console.log(attribute);
+// console.log(attribute);
 
 
 
-const attribFunc = pplAttributes[attribute];
 
-console.log(attribFunc);
 
 
 
