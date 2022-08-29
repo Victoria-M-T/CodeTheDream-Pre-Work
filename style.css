@@ -1,5 +1,7 @@
 html {
-    background-color: rgb(27, 24, 24)
+    background-color: rgb(27, 24, 24);
+    font-family: "Courier new";
+    font-weight: bold;
 }
 
 div {
@@ -13,7 +15,6 @@ h1 {
     text-align: center;
     font-weight: bold;
     color: white;
-    font-family: "Courier new";
   }
 
 p {
@@ -29,6 +30,7 @@ button {
     font-weight: bold;
     font-family: "Courier new";
     font-weight: bold;
+    font-size:larg;
     border-width: 1.5px;
 }
 
@@ -41,5 +43,17 @@ button.wrong {
 button.correct {
     background-color:rgb(110, 180, 110);
     border-color:rgb(59, 134, 59);
+    color: white;
+}
+
+#start {
+    background-color:rgb(130, 174, 130);
+    border-color:rgb(59, 134, 59);
+    color: white;
+}
+
+.selected {
+    background-color:rgb(210, 210, 118);
+    border-color:rgb(156, 141, 85);
     color: white;
 }

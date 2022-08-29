@@ -1,27 +1,77 @@
 // score counter
 var score = 0;
-var topic = 'people/';
+var qNumber = 0;
 var answerArray = [];
-const url = 'https://swapi.dev/api/' + topic;
 var checksArray = [];
 let pages = 0;
 var correctChoice;
 var questionCount = 0;
+var topicQuestions;
+var topic;
+var url = "";
+var a1;
+var a2;
+
 
 window.onload = startEventListeners;
 
-function startEventListeners () {
-  document.getElementById("start").addEventListener("click", startQuiz);
+//returns a random number between minimum and maximum (both included)
+function randomNumber(min, max) {
+  return Math.floor(Math.random() * (max - min +1)) + min;
 };
 
+//shuffles an array
+function shuffleArray(arr) {
+  arr.sort(() => Math.random() - 0.5);
+}
+
+//returns a random key
+function randomAttributeKey (obj) {
+  const keys = Object.keys(obj);
+  return keys[randomNumber(0,keys.length-1)];
+};
+
+
+//event listener for topic selection
+function startEventListeners () {
+  document.getElementById("chars").addEventListener("click", startQuiz);
+  document.getElementById("planets").addEventListener("click", startQuiz);
+};
+
+//diplay the question number
+function displayqNumber () {
+  document.getElementById("startDiv").innerHTML = '<p> question ' + qNumber + '/5</p';
+}
+
+function displayStart () {
+  document.getElementById("startDiv").innerHTML = '<p>Please choose a topic.</p><button id ="chars" name="people">characters</button><button id = "planets" name="planets">planets</button>';
+}
+
+//create url based on topic selection
 function startQuiz () {
-  document.getElementById("startDiv").innerHTML = '';
+  qNumber += 1;
+  if (this.name == "people") {
+  topicQuestions = people;
+  topic = "people/";
+  } else {
+    topicQuestions = planets;
+    topic = "planets/";
+  }
+  url = "https://swapi.dev/api/" + topic;
+  fetchTopic();
+}
+
+//display "loading" while fetching API
+function fetchTopic () {
   document.getElementById("question").innerText = "loading questions...";
   document.getElementById("ansbuttons").innerHTML = '<button  id="a1"> loading ... </button> <button  id="a2"> loading ... </button>';
-
+  a1 = document.getElementById("a1");
+  a2 = document.getElementById("a2");
+  displayqNumber();
   getAPI(randomPages);
 }
 
+//check if answer is correct
 function checkChoice() {
   questionCount += 1;
   if (this.innerText == correctChoice) {
@@ -30,41 +80,68 @@ function checkChoice() {
   } else {
     this.className = "wrong";
   }
-  document.getElementById("a1").removeEventListener("click", checkChoice);
-  document.getElementById("a2").removeEventListener("click", checkChoice);
+  a1.removeEventListener("click", checkChoice);
+  a2.removeEventListener("click", checkChoice);
+  //make next question available or end quiz
   if (questionCount < 5) {
     document.getElementById("nextDiv").innerHTML = '<button id = "next">Next question -></button>';
     document.getElementById("next").addEventListener("click", nextQuestion);
   } else {
-    document.getElementById("nextDiv").innerHTML = '<p> Amazing! You guessed ' + score + '/5 answers correctly. <p>';
+    document.getElementById("nextDiv").innerHTML = '<p> Wow! You guessed ' + score + '/5 answers correctly.';
+
   }
 };
 
+
+//hide next button, remove button colors, fetch next answer
 function nextQuestion () { 
   answerArray = [];
+  qNumber += 1;
+  displayqNumber ()
   document.getElementById("nextDiv").innerHTML = '';
   document.getElementById("question").innerText = "loading";
-  document.getElementById("a1").className = "nuetral";
-  document.getElementById("a2").className = "nuetral";
-  document.getElementById("a1").innerText = "...";
-  document.getElementById("a2").innerText = "...";
-  document.getElementById("a1").addEventListener("click", checkChoice);
-  document.getElementById("a2").addEventListener("click", checkChoice);
+  a1.className = "nuetral";
+  a2.className = "nuetral";
+  a1.innerText = "...";
+  a2.innerText = "...";
+  a1.addEventListener("click", checkChoice);
+  a2.addEventListener("click", checkChoice);
   randomPages(pages);
 }
 
-//returns a random number between minimum and maximum (both included)
-function randomNumber(min, max) {
-  return Math.floor(Math.random() * (max - min +1)) + min;
-};
-
-
-function shuffleArray(arr) {
-  arr.sort(() => Math.random() - 0.5);
+//methods for retreiving, validating info about planets and returning a question
+var planets = {
+  residents: async function(planet) {
+    try {
+      response = await fetch(planet.residents[0]);
+    } catch (e) {
+      return false;
+    };
+    if (!response.ok) {
+      return false;
+    };
+    const data = await response.json();
+    const name = await data.name;
+    return (' Which is the home planet of the character ' + name + "?");
+  },
+  climate: function(planet) {
+    if (planet.climate != 'unknown'){
+      return ('Which planet has a climate that is ' + planet.climate + "?");
+    } else {
+      return false;
+    };
+  },
+  population: function(planet) {
+    if (planet.population !='unknown'){
+      return ('Which planet has an average population of ' + planet.population + "?");
+    } else {
+      return false;
+    };
+  }
 }
 
-//object holding funtions to return info about a character 
-var pplAttributes = {
+////methods for retreiving, validating info about characters and returning a question
+var people = {
   homeworld: async function (person) {
     try {response = await fetch(person.homeworld);
     } catch (e) {
@@ -75,7 +152,7 @@ var pplAttributes = {
     };
     const data = await response.json();
     const name = await data.name;
-    if (name == "unknown") {
+    if (name == 'unknown') {
       return false;
     } else {
       return ('Which character is from the planet ' + name +"?");
@@ -136,7 +213,6 @@ async function getAPI(callback) {
   const response = await fetch(url);
   const data = await response.json();
   const count = await data.count;
-  console.log(count);
   pages = count;
   callback(count);
 };
@@ -145,13 +221,15 @@ async function getAPI(callback) {
 //choose a random page
 async function randomPages(pagecount) {
 	do {
+	do {
 		try {
 	      response = await fetch(url + randomNumber(1, pagecount));
       } catch (error) {
         console.log(error)
     }
-	} while (!response.ok || response.status >200);
+	} while (!response.ok || response.status == "404");
 	correctAnswerData = await response.json();
+} while (correctAnswerData.name == 'unknown');
   answerArray.push(correctAnswerData.name);
   correctChoice = correctAnswerData.name;
   console.log(correctAnswerData);
@@ -163,81 +241,38 @@ async function randomPages(pagecount) {
 //get the data off an attribute for the answer only if it exists and is valid
 async function getValidAttribute(answerJSON, nextFunc){
   do {
-    attribute = randomAttributeKey(pplAttributes);
-    attribFunc = pplAttributes[attribute];
+    attribute = randomAttributeKey(topicQuestions);
+    attribFunc = topicQuestions[attribute];
     correctAnswerAttribute = await attribFunc(answerJSON);
-    console.log(correctAnswerAttribute);
   } while ( correctAnswerAttribute === false);
-  
-  console.log(correctAnswerAttribute);
   document.getElementById("question").innerHTML = correctAnswerAttribute;
   nextFunc(correctAnswerAttribute, attribute);
 
 }
 
 
-//chose a random wront answer that does share the chosen attribute with the correct answer
+//chose a random wrong answer that does share the chosen attribute with the correct answer
 async function randomWrong(correctAttribute, attributeKey) {
   do {
     key = attributeKey;
-    attribFunc = pplAttributes[key];
+    attribFunc = topicQuestions[key];
     do {
       try {
           response = await fetch(url + randomNumber(1, pages));
         } catch (error) {
           console.log(error)
       }
-    } while (!response.ok || response.status >200);
+    } while (!response.ok || response.status == "404");
     wrongAnswerData = await response.json();
     wrongAttribute = await attribFunc(wrongAnswerData);
-    console.log(wrongAttribute);
-  } while ( wrongAttribute == correctAttribute);
-  console.log(wrongAttribute);
+  } while ( wrongAnswerData.name == 'unknown' || wrongAttribute == correctAttribute);
   console.log(wrongAnswerData);
   answerArray.push(wrongAnswerData.name);
-  console.log (answerArray);
   shuffleArray(answerArray);
-  document.getElementById("a1").innerText = answerArray[0];
-  document.getElementById("a2").innerText = answerArray[1];
-  document.getElementById("a1").addEventListener("click", checkChoice);
-  document.getElementById("a2").addEventListener("click", checkChoice);
+  a1.innerText = answerArray[0];
+  a2.innerText = answerArray[1];
+  a1.addEventListener("click", checkChoice);
+  a2.addEventListener("click", checkChoice);
 }
-
-
-
-
-function randomAttributeKey (obj) {
-  const keys = Object.keys(obj);
-  return keys[randomNumber(0,keys.length-1)];
-};
-
-
-// move from question to question by stepping through i++ i=5
-
-
-//    *on click 
-//       if character === chosen character 
-//        add a Point 
-//        show some positive animation 
-//        show next button 
-//      otherwise
-//       show negative animation 
-//       show next button 
-
-// next button
-//  keep the score counter but 
-
-
-
-// for (var i in answerButtons) {
-//   answerButtons[i].addEventListener("click", function () {
-//     if (this.innerHTML == correctChoice){
-//       this.innerHTML = "correct";
-//     } else {
-//       this.innerHTML = "wrong";
-//     };
-//   })
-// };
-
 
 
